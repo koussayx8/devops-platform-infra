@@ -45,3 +45,67 @@ output "network_summary" {
     nat_gateways        = length(module.vpc.nat_gateway_ids)
   }
 }
+
+
+# EKS Cluster Outputs
+output "eks_cluster_id" {
+  description = "EKS cluster ID"
+  value       = module.eks.cluster_id
+}
+
+output "eks_cluster_arn" {
+  description = "EKS cluster ARN"  
+  value       = module.eks.cluster_arn
+}
+
+output "eks_cluster_endpoint" {
+  description = "EKS cluster API server endpoint"
+  value       = module.eks.cluster_endpoint
+}
+
+output "eks_cluster_version" {
+  description = "EKS cluster Kubernetes version"
+  value       = module.eks.cluster_version
+}
+
+output "eks_cluster_security_group_id" {
+  description = "Security group ID attached to EKS cluster"
+  value       = module.eks.cluster_security_group_id
+}
+
+output "eks_node_group_arn" {
+  description = "EKS node group ARN"
+  value       = module.eks.node_group_arn
+}
+
+output "eks_node_group_status" {
+  description = "EKS node group status"
+  value       = module.eks.node_group_status
+}
+
+# Kubectl Configuration
+output "kubectl_config" {
+  description = "kubectl configuration for accessing the cluster"
+  value = {
+    cluster_name    = module.eks.cluster_id
+    endpoint        = module.eks.cluster_endpoint
+    region          = var.aws_region
+    
+    # Commands to configure kubectl
+    update_kubeconfig_command = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_id}"
+  }
+}
+
+# Cluster Summary
+output "cluster_summary" {
+  description = "EKS cluster summary information"
+  value = {
+    cluster_name     = module.eks.cluster_id
+    cluster_version  = module.eks.cluster_version
+    node_group_type  = var.eks_node_capacity_type
+    node_instances   = var.eks_node_instance_types
+    min_nodes       = var.eks_node_min_size
+    max_nodes       = var.eks_node_max_size
+    desired_nodes   = var.eks_node_desired_size
+  }
+}

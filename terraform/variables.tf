@@ -54,3 +54,54 @@ variable "common_tags" {
     ManagedBy  = "terraform"
   }
 }
+
+
+
+#  EKS variables to your existing 
+
+variable "eks_cluster_version" {
+  description = "Kubernetes version for EKS cluster"
+  type        = string
+  default     = "1.28"
+}
+
+variable "eks_node_instance_types" {
+  description = "Instance types for EKS node group"
+  type        = list(string)
+  default     = ["t3.medium"]
+}
+
+variable "eks_node_capacity_type" {
+  description = "Capacity type for EKS nodes (ON_DEMAND or SPOT)"
+  type        = string
+  default     = "SPOT"
+  
+  validation {
+    condition = contains(["ON_DEMAND", "SPOT"], var.eks_node_capacity_type)
+    error_message = "Capacity type must be either ON_DEMAND or SPOT."
+  }
+}
+
+variable "eks_node_disk_size" {
+  description = "Disk size in GB for EKS nodes"
+  type        = number
+  default     = 20
+}
+
+variable "eks_node_desired_size" {
+  description = "Desired number of EKS nodes"
+  type        = number
+  default     = 2
+}
+
+variable "eks_node_max_size" {
+  description = "Maximum number of EKS nodes"
+  type        = number
+  default     = 4
+}
+
+variable "eks_node_min_size" {
+  description = "Minimum number of EKS nodes"
+  type        = number
+  default     = 1
+}

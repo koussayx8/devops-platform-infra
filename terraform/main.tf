@@ -27,7 +27,30 @@ module "vpc" {
   tags = local.common_tags
 }
 
-# Future modules will be added here:
-# - Security Groups (modules/security)
-# - EKS Cluster (modules/eks)
-# - RDS Database (modules/rds)
+# EKS Cluster Module
+module "eks" {
+  source = "./modules/eks"
+  
+  cluster_name       = "${local.environment}-cluster"
+  cluster_version    = var.eks_cluster_version
+  vpc_id            = module.vpc.vpc_id
+  subnet_ids        = concat(module.vpc.public_subnet_ids, module.vpc.private_subnet_ids)
+  private_subnet_ids = module.vpc.private_subnet_ids
+  
+  node_group_config = {
+    instance_types = var.eks_node_instance_types
+    capacity_type  = var.eks_node_capacity_type
+    disk_size      = var.eks_node_disk_size
+    ami_type       = "AL2_x86_64"
+    desired_size   = var.eks_node_desired_size
+    max_size       = var.eks_node_max_size
+    min_size       = var.eks_node_min_size
+  }
+  
+  endpoint_private_access = true
+  endpoint_public_access  = true
+  
+  tags = local.common_tags
+  
+  depends_on = [module.vpc]
+}
