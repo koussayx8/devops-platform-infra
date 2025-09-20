@@ -115,7 +115,7 @@ output "kubectl_config" {
     cluster_name                     = aws_eks_cluster.main.name
     endpoint                        = aws_eks_cluster.main.endpoint
     certificate_authority_data      = aws_eks_cluster.main.certificate_authority[0].data
-    region                         = data.aws_caller_identity.current.region
+    region                         = data.aws_region.current.name
     cluster_security_group_id      = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
   }
 }
