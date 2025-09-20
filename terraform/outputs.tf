@@ -93,8 +93,8 @@ output "kubectl_config" {
     region                         = var.aws_region
     cluster_security_group_id      = try(module.eks.cluster_security_group_id, "sg-not-available")
     
-    # Commands to configure kubectl
-    update_kubeconfig_command      = "aws eks update-kubeconfig --region ${var.aws_region} --name ${try(module.eks.cluster_id, "cluster-name")}"
+    # Commands to configure kubectl - Fixed version
+    update_kubeconfig_command      = module.eks.cluster_id != null ? "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_id}" : "aws eks update-kubeconfig --region ${var.aws_region} --name cluster-name"
   }
 }
 
@@ -102,8 +102,8 @@ output "kubectl_config" {
 output "cluster_summary" {
   description = "EKS cluster summary information"
   value = {
-    cluster_name     = module.eks.cluster_id
-    cluster_version  = module.eks.cluster_version
+    cluster_name     = try(module.eks.cluster_id, "cluster-not-created")
+    cluster_version  = try(module.eks.cluster_version, "version-not-available")
     node_group_type  = var.eks_node_capacity_type
     node_instances   = var.eks_node_instance_types
     min_nodes       = var.eks_node_min_size
