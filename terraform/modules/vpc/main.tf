@@ -1,4 +1,4 @@
-# Get available AZs
+# Data sources
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -6,11 +6,12 @@ data "aws_availability_zones" "available" {
 # VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+  enable_dns_hostnames = var.enable_dns_hostnames
+  enable_dns_support   = var.enable_dns_support
 
   tags = merge(var.tags, {
     Name = "${var.environment}-vpc"
+    Type = "VPC"
   })
 }
 
@@ -20,58 +21,71 @@ resource "aws_internet_gateway" "main" {
 
   tags = merge(var.tags, {
     Name = "${var.environment}-igw"
+    Type = "InternetGateway"
   })
 }
 
 # Public Subnets
 resource "aws_subnet" "public" {
-  count = 2
+  count = length(var.public_subnet_cidrs)
 
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.${count.index}.0/24"
-  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  cidr_block              = var.public_subnet_cidrs[count.index]
+  availability_zone       = var.availability_zones[count.index]
   map_public_ip_on_launch = true
 
   tags = merge(var.tags, {
     Name = "${var.environment}-public-subnet-${count.index + 1}"
     Type = "Public"
-    "kubernetes.io/role/elb" = "1"  # For AWS Load Balancer Controller
+    AZ   = var.availability_zones[count.index]
+    # Kubernetes tags for Load Balancer Controller
+    "kubernetes.io/cluster/${var.environment}-cluster" = "shared"
+    "kubernetes.io/role/elb"                           = "1"
   })
 }
 
-# Private Subnets  
+# Private Subnets
 resource "aws_subnet" "private" {
-  count = 2
+  count = length(var.private_subnet_cidrs)
 
   vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.${count.index + 128}.0/24"  # 128, 129
-  availability_zone = data.aws_availability_zones.available.names[count.index]
+  cidr_block        = var.private_subnet_cidrs[count.index]
+  availability_zone = var.availability_zones[count.index]
 
   tags = merge(var.tags, {
     Name = "${var.environment}-private-subnet-${count.index + 1}"
     Type = "Private"
-    "kubernetes.io/role/internal-elb" = "1"
+    AZ   = var.availability_zones[count.index]
+    # Kubernetes tags
+    "kubernetes.io/cluster/${var.environment}-cluster" = "shared"
+    "kubernetes.io/role/internal-elb"                  = "1"
   })
 }
 
-# Elastic IP for NAT Gateway
+# Elastic IPs for NAT Gateways
 resource "aws_eip" "nat" {
-  domain = "vpc"
+  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnet_cidrs)) : 0
+
+  domain     = "vpc"
   depends_on = [aws_internet_gateway.main]
 
   tags = merge(var.tags, {
-    Name = "${var.environment}-nat-eip"
+    Name = "${var.environment}-nat-eip-${count.index + 1}"
+    Type = "ElasticIP"
   })
 }
 
-# NAT Gateway (only in first public subnet for cost optimization)
+# NAT Gateways
 resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
+  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnet_cidrs)) : 0
+
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
   depends_on    = [aws_internet_gateway.main]
 
   tags = merge(var.tags, {
-    Name = "${var.environment}-nat-gateway"
+    Name = "${var.environment}-nat-gateway-${count.index + 1}"
+    Type = "NATGateway"
   })
 }
 
@@ -79,28 +93,38 @@ resource "aws_nat_gateway" "main" {
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-
   tags = merge(var.tags, {
     Name = "${var.environment}-public-rt"
+    Type = "PublicRouteTable"
   })
 }
 
-# Route Table for Private Subnets
+# Public Route - Internet Gateway
+resource "aws_route" "public_internet_gateway" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.main.id
+}
+
+# Route Tables for Private Subnets
 resource "aws_route_table" "private" {
+  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnet_cidrs)) : 1
+
   vpc_id = aws_vpc.main.id
 
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
-  }
-
   tags = merge(var.tags, {
-    Name = "${var.environment}-private-rt"
+    Name = "${var.environment}-private-rt-${count.index + 1}"
+    Type = "PrivateRouteTable"
   })
+}
+
+# Private Routes - NAT Gateway
+resource "aws_route" "private_nat_gateway" {
+  count = var.enable_nat_gateway ? length(aws_route_table.private) : 0
+
+  route_table_id         = aws_route_table.private[count.index].id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = var.single_nat_gateway ? aws_nat_gateway.main[0].id : aws_nat_gateway.main[count.index].id
 }
 
 # Associate Public Subnets with Public Route Table
@@ -111,10 +135,75 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Associate Private Subnets with Private Route Table
+# Associate Private Subnets with Private Route Tables
 resource "aws_route_table_association" "private" {
   count = length(aws_subnet.private)
 
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
+  route_table_id = var.single_nat_gateway ? aws_route_table.private[0].id : aws_route_table.private[count.index].id
+}
+
+# VPC Flow Logs (for monitoring)
+resource "aws_flow_log" "vpc_flow_log" {
+  iam_role_arn    = aws_iam_role.flow_log.arn
+  log_destination = aws_cloudwatch_log_group.vpc_flow_log.arn
+  traffic_type    = "ALL"
+  vpc_id          = aws_vpc.main.id
+}
+
+# CloudWatch Log Group for VPC Flow Logs
+resource "aws_cloudwatch_log_group" "vpc_flow_log" {
+  name              = "/aws/vpc/${var.environment}-flow-logs"
+  retention_in_days = 7
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-vpc-flow-logs"
+    Type = "LogGroup"
+  })
+}
+
+# IAM Role for VPC Flow Logs
+resource "aws_iam_role" "flow_log" {
+  name = "${var.environment}-vpc-flow-logs-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "vpc-flow-logs.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = merge(var.tags, {
+    Name = "${var.environment}-vpc-flow-logs-role"
+    Type = "IAMRole"
+  })
+}
+
+# IAM Policy for VPC Flow Logs
+resource "aws_iam_role_policy" "flow_log" {
+  name = "${var.environment}-vpc-flow-logs-policy"
+  role = aws_iam_role.flow_log.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        Effect = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
 }

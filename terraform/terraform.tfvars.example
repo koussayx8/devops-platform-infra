@@ -1,0 +1,21 @@
+
+# Basic Configuration
+aws_region   = "us-east-1"
+environment  = "dev"
+project_name = "devops-platform"
+
+# Network Configuration
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# Cost Optimization
+enable_nat_gateway = true
+single_nat_gateway = true  # Set to false for high availability (doubles NAT costs)
+
+# Tags
+common_tags = {
+  Project    = "devops-platform"
+  Owner      = "koussay"
+  ManagedBy  = "terraform"
+  Repository = "devops-platform-infra"
+}
