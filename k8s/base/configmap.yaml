@@ -12,8 +12,8 @@ data:
         name: ski-station-api
       datasource:
         url: jdbc:mysql://mysql-service:3306/gestionstationski?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
-        username: root
-        password: rootpassword
+        username: springuser
+        password: springpassword
       jpa:
         hibernate:
           ddl-auto: update
