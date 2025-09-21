@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ski-station-config
+  namespace: ski-station
+data:
+  application.yml: |
+    server:
+      port: 8080
+    spring:
+      application:
+        name: ski-station-api
+      datasource:
+        url: jdbc:mysql://mysql-service:3306/gestionstationski?createDatabaseIfNotExist=true&useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+        username: root
+        password: rootpassword
+      jpa:
+        hibernate:
+          ddl-auto: update
+        properties:
+          hibernate:
+            dialect: org.hibernate.dialect.MySQL57Dialect
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,info,prometheus,metrics
+      endpoint:
+        health:
+          show-details: always
+      metrics:
+        export:
+          prometheus:
+            enabled: true
+    logging:
+      level:
+        tn.esprit.spring: INFO

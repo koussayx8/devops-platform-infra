@@ -1,0 +1,9 @@
+# Create namespace manifest
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ski-station
+  labels:
+    name: ski-station
+    app.kubernetes.io/name: ski-station
+    app.kubernetes.io/component: backend
