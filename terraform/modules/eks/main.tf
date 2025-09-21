@@ -141,6 +141,7 @@ resource "aws_eks_node_group" "main" {
   tags = merge(var.tags, {
     Name = "${var.cluster_name}-node-group"
     Type = "EKS-NodeGroup"
+    "aws:autoscaling:groupName" = "${var.cluster_name}-node-group"
   })
 }
 

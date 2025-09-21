@@ -94,8 +94,7 @@ output "kubectl_config" {
     cluster_security_group_id      = try(module.eks.cluster_security_group_id, "sg-not-available")
     
     # Commands to configure kubectl - Fixed version
-    update_kubeconfig_command      = module.eks.cluster_id != null ? "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_id}" : "aws eks update-kubeconfig --region ${var.aws_region} --name cluster-name"
-  }
+    update_kubeconfig_command = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"  }
 }
 
 # Cluster Summary
