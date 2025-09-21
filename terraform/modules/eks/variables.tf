@@ -36,11 +36,11 @@ variable "node_group_config" {
     min_size       = number
   })
   default = {
-    instance_types = ["t3.small"]
+    instance_types = ["m7i-flex.large"]
     capacity_type  = "ON_DEMAND"
     disk_size      = 30
     ami_type       = "AL2_x86_64"
-    desired_size   = 2
+    desired_size   = 1
     max_size       = 2
     min_size       = 1
   }
