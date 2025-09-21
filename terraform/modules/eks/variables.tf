@@ -36,12 +36,12 @@ variable "node_group_config" {
     min_size       = number
   })
   default = {
-    instance_types = ["t3.medium"]
-    capacity_type  = "SPOT"
-    disk_size      = 20
+    instance_types = ["t3.small"]
+    capacity_type  = "ON_DEMAND"
+    disk_size      = 30
     ami_type       = "AL2_x86_64"
     desired_size   = 2
-    max_size       = 4
+    max_size       = 2
     min_size       = 1
   }
 }

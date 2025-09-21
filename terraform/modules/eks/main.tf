@@ -194,12 +194,12 @@ resource "aws_security_group" "cluster_additional" {
 }
 
 # CloudWatch Log Group for EKS cluster logs
-resource "aws_cloudwatch_log_group" "cluster" {
-  name              = "/aws/eks/${var.cluster_name}/cluster"
-  retention_in_days = 7
+# resource "aws_cloudwatch_log_group" "cluster" {
+#   name              = "/aws/eks/${var.cluster_name}/cluster"
+#   retention_in_days = 7
 
-  tags = merge(var.tags, {
-    Name = "${var.cluster_name}-logs"
-    Type = "EKS-CloudWatch-LogGroup"
-  })
-}
+#   tags = merge(var.tags, {
+#     Name = "${var.cluster_name}-logs"
+#     Type = "EKS-CloudWatch-LogGroup"
+#   })
+# }
