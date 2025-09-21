@@ -103,10 +103,10 @@ output "cluster_oidc_issuer_url" {
   value       = aws_eks_cluster.main.identity[0].oidc[0].issuer
 }
 
-# output "cluster_logs_cloudwatch_log_group_name" {
-#   description = "Name of the CloudWatch log group for cluster logs"
-#   value       = aws_cloudwatch_log_group.cluster.name
-# }
+output "cluster_logs_cloudwatch_log_group_name" {
+  description = "Name of the CloudWatch log group for cluster logs"
+  value       = aws_cloudwatch_log_group.cluster.name
+}
 
 # Kubectl config information
 output "kubectl_config" {
