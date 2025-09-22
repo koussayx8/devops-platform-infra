@@ -135,3 +135,59 @@ spec:
       volumes:
       - name: mysql-storage
         emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ski-station-frontend
+  namespace: ski-station
+  labels:
+    app: ski-station-frontend
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ski-station-frontend
+  template:
+    metadata:
+      labels:
+        app: ski-station-frontend
+        version: v1
+    spec:
+      containers:
+      - name: ski-station-frontend
+        image: 837282923949.dkr.ecr.us-east-1.amazonaws.com/ski-station-frontend:latest
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+      imagePullSecrets:
+      - name: ecr-registry-secret
