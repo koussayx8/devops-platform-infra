@@ -21,13 +21,23 @@ spec:
       - name: ski-station-api
         image: 837282923949.dkr.ecr.us-east-1.amazonaws.com/ski-station-api:latest
         ports:
-        - containerPort: 8080
+        - containerPort: 8089
           name: http
         env:
         - name: SPRING_PROFILES_ACTIVE
           value: "kubernetes"
         - name: JAVA_OPTS
           value: "-Xms400m -Xmx800m -XX:+UseG1GC"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:mysql://mysql-service:3306/stationSki?createDatabaseIfNotExist=true"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "springuser"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "springpassword"
+        - name: SERVER_PORT
+          value: "8089"
+        - name: SERVER_SERVLET_CONTEXT_PATH
+          value: "/api"
         resources:
           requests:
             memory: "500Mi"
@@ -37,27 +47,22 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /actuator/health
-            port: 8080
+            path: /api/actuator/health
+            port: 8089
           initialDelaySeconds: 60
           periodSeconds: 30
           timeoutSeconds: 10
         readinessProbe:
           httpGet:
-            path: /actuator/health/readiness
-            port: 8080
+            path: /api/actuator/health
+            port: 8089
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
         volumeMounts:
-        - name: config-volume
-          mountPath: /config
         - name: tmp-volume
           mountPath: /tmp
       volumes:
-      - name: config-volume
-        configMap:
-          name: ski-station-config
       - name: tmp-volume
         emptyDir: {}
       imagePullSecrets:
@@ -90,11 +95,11 @@ spec:
         - name: MYSQL_ROOT_PASSWORD
           value: "rootpassword"
         - name: MYSQL_DATABASE
-          value: "gestionstationski"
+          value: "stationSki"
         - name: MYSQL_USER
-          value: "springuser"  
+          value: "springuser"
         - name: MYSQL_PASSWORD
-          value: "springpassword"          
+          value: "springpassword"
         resources:
           requests:
             memory: "512Mi"
@@ -120,6 +125,9 @@ spec:
             - mysql
             - -h
             - localhost
+            - -u
+            - root
+            - -prootpassword
             - -e
             - "SELECT 1"
           initialDelaySeconds: 15
