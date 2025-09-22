@@ -1,4 +1,4 @@
-# Create namespace manifest
+# Create namespace manifests
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -7,3 +7,12 @@ metadata:
     name: ski-station
     app.kubernetes.io/name: ski-station
     app.kubernetes.io/component: backend
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    name: monitoring
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/component: observability
