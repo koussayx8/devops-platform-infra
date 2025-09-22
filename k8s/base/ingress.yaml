@@ -24,4 +24,4 @@ spec:
               service:
                 name: ski-station-api-service
                 port:
-                  number: 80
+                  number: 8089
