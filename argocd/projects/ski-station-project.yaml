@@ -25,7 +25,7 @@ spec:
     server: 'https://kubernetes.default.svc'
   - namespace: 'argocd'
     server: 'https://kubernetes.default.svc'
-  - namespace: 'kube-system'
+  - namespace: '*' # Allow all namespaces for flexibility
     server: 'https://kubernetes.default.svc'
   
   # Cluster-scoped resources allowed to be managed
@@ -47,42 +47,9 @@ spec:
   
   # Namespace-scoped resources allowed to be managed
   namespaceResourceWhitelist:
-  - group: ''
-    kind: ConfigMap
-  - group: ''
-    kind: Secret
-  - group: ''
-    kind: Service
-  - group: ''
-    kind: ServiceAccount
-  - group: 'apps'
-    kind: Deployment
-  - group: 'apps'
-    kind: ReplicaSet
-  - group: 'apps'
-    kind: StatefulSet
-  - group: 'apps'
-    kind: DaemonSet
-  - group: 'networking.k8s.io'
-    kind: Ingress
-  - group: 'networking.k8s.io'
-    kind: NetworkPolicy
-  - group: 'monitoring.coreos.com'
-    kind: ServiceMonitor
-  - group: 'monitoring.coreos.com'
-    kind: PrometheusRule
-  - group: 'policy'
-    kind: PodSecurityPolicy
-  - group: 'rbac.authorization.k8s.io'
-    kind: Role
-  - group: 'rbac.authorization.k8s.io'
-    kind: RoleBinding
-  - group: 'autoscaling'
-    kind: HorizontalPodAutoscaler
-  - group: 'batch'
-    kind: Job
-  - group: 'batch'
-    kind: CronJob
+  - group: '*'
+    kind: '*' 
+
   
   # Project roles for RBAC
   roles:

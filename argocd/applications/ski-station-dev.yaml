@@ -20,8 +20,7 @@ spec:
     
   destination:
     server: https://kubernetes.default.svc
-    # ArgoCD will deploy resources to their specified namespaces
-    # (ski-station and monitoring based on the manifests)
+    namespace: ski-station  # Default namespace, but resources will go to their defined namespaces
     
   syncPolicy:
     automated:
