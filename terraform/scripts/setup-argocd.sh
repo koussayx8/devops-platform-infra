@@ -83,7 +83,8 @@ install_argocd() {
     kubectl wait --for=condition=available --timeout=600s deployment/argocd-server -n ${ARGOCD_NAMESPACE}
     kubectl wait --for=condition=available --timeout=600s deployment/argocd-repo-server -n ${ARGOCD_NAMESPACE}
     kubectl wait --for=condition=available --timeout=600s deployment/argocd-dex-server -n ${ARGOCD_NAMESPACE}
-    kubectl wait --for=condition=available --timeout=600s deployment/argocd-application-controller -n ${ARGOCD_NAMESPACE}
+    
+    kubectl wait --for=condition=ready --timeout=600s pod -l app.kubernetes.io/name=argocd-application-controller -n ${ARGOCD_NAMESPACE}    
     
     print_status "ArgoCD installation completed ✅"
 }
