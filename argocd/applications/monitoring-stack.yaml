@@ -1,0 +1,50 @@
+# Monitoring Stack Application (Uses existing k8s/base configs)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-stack
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: monitoring-stack
+    app.kubernetes.io/component: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: ski-station-project
+  
+  source:
+    repoURL: https://github.com/koussayx8/devops-platform-infra.git
+    targetRevision: main
+    path: k8s/base
+    directory:
+      include: |
+        monitoring-*.yaml
+        dashboard-configmap.yaml
+        servicemonitor.yaml
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+        
+  revisionHistoryLimit: 5
+  
+  info:
+  - name: 'Component'
+    value: 'Monitoring Stack'
+  - name: 'Source'
+    value: 'Existing k8s/base configs'
+  - name: 'Includes'
+    value: 'Grafana dashboard, ServiceMonitor, Ingress'

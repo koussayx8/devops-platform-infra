@@ -1,0 +1,72 @@
+# ArgoCD Installation via Helm Chart
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd
+    app.kubernetes.io/component: gitops
+spec:
+  project: default
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argo-cd
+    targetRevision: 5.46.8
+    helm:
+      values: |
+        global:
+          domain: argocd.local
+        
+        server:
+          service:
+            type: ClusterIP
+          ingress:
+            enabled: false
+          insecure: true
+          
+        configs:
+          params:
+            server.insecure: true
+            server.rootpath: /argocd
+          
+          cm:
+            url: https://argocd.local/argocd
+            oidc.config: |
+              name: OIDC
+              issuer: https://argocd.local/argocd/auth/oidc
+              clientId: argocd
+              clientSecret: $oidc.clientSecret
+              requestedScopes: ["openid", "profile", "email", "groups"]
+        
+        dex:
+          enabled: false
+        
+        notifications:
+          enabled: true
+          
+        applicationSet:
+          enabled: true
+        
+        redis-ha:
+          enabled: false
+          
+        redis:
+          enabled: true
+          
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

@@ -1,0 +1,65 @@
+# Ski Station Development Environment Application (includes monitoring)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ski-station-dev
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ski-station-dev
+    app.kubernetes.io/component: application
+    environment: development
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: ski-station-project
+  
+  source:
+    repoURL: https://github.com/koussayx8/devops-platform-infra.git
+    targetRevision: main
+    path: k8s/base  # Deploy all base configs including monitoring
+    
+  destination:
+    server: https://kubernetes.default.svc
+    # ArgoCD will deploy resources to their specified namespaces
+    # (ski-station and monitoring based on the manifests)
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+        
+  revisionHistoryLimit: 10
+  
+  # Health and sync status
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/replicas
+  - group: apps
+    kind: StatefulSet
+    jsonPointers:
+    - /spec/replicas
+    
+  # Notification settings
+  info:
+  - name: 'Environment'
+    value: 'Development'
+  - name: 'Owner'
+    value: 'DevOps Team'
+  - name: 'Repository'
+    value: 'https://github.com/koussayx8/devops-platform-infra.git'
+  - name: 'Includes'
+    value: 'Application + Monitoring Stack'
